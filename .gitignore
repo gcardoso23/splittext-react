@@ -1,0 +1,8 @@
+node_modules
+dist
+coverage
+*.tgz
+.DS_Store
+test/browser/__screenshots__
+.playwright-mcp
+.playground-dist
