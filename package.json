@@ -40,7 +40,9 @@
   "scripts": {
     "build": "tsdown --config-loader native",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:unit": "vitest run --project unit",
+    "test:browser": "vitest run --project browser"
   },
   "peerDependencies": {
     "react": ">=18",
