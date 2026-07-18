@@ -30,6 +30,13 @@ const LINE = '[data-split="line"]';
 
 // Sizes come in fractions of a pixel. Anything closer than this is the same.
 const EPSILON = 0.05;
+// How long resizing has to pause before offscreen text is brought up to date,
+const SETTLE_DELAY = 150;
+// and how many milliseconds of a frame that may then take. The number of
+// instances handled per frame is adjusted to stay around it.
+const SETTLE_BUDGET = 5;
+const SETTLE_BATCH_MIN = 4;
+const SETTLE_BATCH_MAX = 96;
 
 const EMPTY: readonly never[] = [];
 
@@ -48,6 +55,8 @@ function hasOwnOffsetParent(element: HTMLElement, root: HTMLElement): boolean {
 
 export class Controller {
   root: HTMLElement | null = null;
+  /** Near the viewport, as far as the IntersectionObserver has told us. */
+  visible = true;
   onChange: (signature: string, starts: number[]) => void = () => {};
 
   private signature = '';
@@ -304,15 +313,36 @@ export class Controller {
 
 const controllers = new Set<Controller>();
 const byRoot = new WeakMap<Element, Controller>();
-// Instances whose size is worth checking this frame.
+// Instances whose size is worth checking this frame,
 const queued = new Set<Controller>();
+// offscreen ones that wait for resizing to pause,
+const deferred = new Set<Controller>();
+// and offscreen ones whose wait is over.
+const ready = new Set<Controller>();
 
 let frame = 0;
+let timer: ReturnType<typeof setTimeout> | undefined;
 let resized = false;
+let settleBatch = 16;
 let resizeObserver: ResizeObserver | null = null;
+let intersectionObserver: IntersectionObserver | null = null;
 
 function schedule(): void {
   if (frame === 0) frame = requestAnimationFrame(flush);
+}
+
+function defer(controller: Controller): void {
+  ready.delete(controller);
+  deferred.add(controller);
+  clearTimeout(timer);
+  timer = setTimeout(settle, SETTLE_DELAY);
+}
+
+function settle(): void {
+  timer = undefined;
+  for (const controller of deferred) ready.add(controller);
+  deferred.clear();
+  schedule();
 }
 
 function flush(): void {
@@ -323,8 +353,22 @@ function flush(): void {
   }
 
   const batch: Controller[] = [];
-  for (const controller of queued) if (controller.check()) batch.push(controller);
+  for (const controller of queued) {
+    if (!controller.visible) defer(controller);
+    else if (controller.check()) batch.push(controller);
+  }
   queued.clear();
+
+  const startedAt = performance.now();
+  const urgent = batch.length;
+  for (const controller of ready) {
+    ready.delete(controller);
+    if (controller.check()) {
+      batch.push(controller);
+      if (batch.length - urgent === settleBatch) break;
+    }
+  }
+  if (ready.size > 0) schedule();
   if (batch.length === 0) return;
 
   const changed: Controller[] = [];
@@ -345,6 +389,14 @@ function flush(): void {
     // reports it.
     for (const controller of changed) controller.settle();
   }
+
+  // A frame spent on nothing but offscreen text tells what an instance costs
+  // on this page and this machine.
+  if (urgent === 0) {
+    const elapsed = Math.max(performance.now() - startedAt, 0.1);
+    const affordable = Math.round((batch.length * SETTLE_BUDGET) / elapsed);
+    settleBatch = Math.min(SETTLE_BATCH_MAX, Math.max(SETTLE_BATCH_MIN, affordable));
+  }
 }
 
 function onResizeEntries(entries: ResizeObserverEntry[]): void {
@@ -355,6 +407,20 @@ function onResizeEntries(entries: ResizeObserverEntry[]): void {
     if (controller) queued.add(controller);
   }
   if (queued.size > 0) schedule();
+}
+
+function onIntersections(entries: IntersectionObserverEntry[]): void {
+  for (const entry of entries) {
+    const controller = byRoot.get(entry.target);
+    if (!controller) continue;
+    controller.visible = entry.isIntersecting;
+    if (!entry.isIntersecting) continue;
+    const waiting = deferred.delete(controller);
+    if (ready.delete(controller) || waiting) {
+      queued.add(controller);
+      schedule();
+    }
+  }
 }
 
 // A resize event is dispatched before the frame's animation callbacks, the
@@ -377,6 +443,11 @@ function start(): void {
   if (typeof ResizeObserver !== 'undefined') {
     resizeObserver = new ResizeObserver(onResizeEntries);
   }
+  if (typeof IntersectionObserver !== 'undefined') {
+    intersectionObserver = new IntersectionObserver(onIntersections, {
+      rootMargin: '50% 0px',
+    });
+  }
   window.addEventListener('resize', onWindowResize, { passive: true });
   const fonts = document.fonts;
   if (fonts && fonts.addEventListener) fonts.addEventListener('loadingdone', onFontsLoaded);
@@ -384,14 +455,17 @@ function start(): void {
 
 function stop(): void {
   resizeObserver?.disconnect();
-  resizeObserver = null;
+  intersectionObserver?.disconnect();
+  resizeObserver = intersectionObserver = null;
   window.removeEventListener('resize', onWindowResize);
   const fonts = document.fonts;
   if (fonts && fonts.removeEventListener) {
     fonts.removeEventListener('loadingdone', onFontsLoaded);
   }
   if (frame !== 0) cancelAnimationFrame(frame);
+  clearTimeout(timer);
   frame = 0;
+  timer = undefined;
   resized = false;
 }
 
@@ -403,12 +477,17 @@ export function register(controller: Controller): () => void {
   controllers.add(controller);
   byRoot.set(root, controller);
   resizeObserver?.observe(root);
+  intersectionObserver?.observe(root);
 
   return () => {
     controllers.delete(controller);
     byRoot.delete(root);
     queued.delete(controller);
+    deferred.delete(controller);
+    ready.delete(controller);
     resizeObserver?.unobserve(root);
+    intersectionObserver?.unobserve(root);
+    controller.visible = true;
     if (controllers.size === 0) stop();
   };
 }

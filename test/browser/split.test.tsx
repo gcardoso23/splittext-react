@@ -335,6 +335,29 @@ describe('re-splitting', () => {
     expect(splitLines(root)).toEqual(naturalLines(root, shorter));
   });
 
+  it('brings offscreen text up to date once resizing has settled', async () => {
+    const host = mount(
+      <>
+        <div style={{ height: 5000 }} />
+        <SplitText style={MONO}>{TEXT}</SplitText>
+      </>,
+      'width:50vw',
+    );
+    const root = rootOf(host);
+    // Give the IntersectionObserver time to report that it is out of view.
+    await frames(4);
+    const before = splitLines(root);
+
+    await page.viewport(520, 700);
+    await frames(2);
+    expect(splitLines(root)).toEqual(before);
+
+    await wait(250);
+    await frames();
+    expect(splitLines(root)).toEqual(naturalLines(root));
+    expect(splitLines(root)).not.toEqual(before);
+  });
+
   it('can be switched off', async () => {
     const host = mount(
       <SplitText style={MONO} autoSplit={false}>
