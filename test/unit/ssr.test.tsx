@@ -32,6 +32,15 @@ describe('server rendering', () => {
     );
   });
 
+  it('stays pending while waiting for fonts', () => {
+    const html = renderToString(
+      <SplitText split="words" waitForFonts>
+        Hi
+      </SplitText>,
+    );
+    expect(html).toContain('data-split-state="pending"');
+  });
+
   it('exposes indexes as custom properties', () => {
     const html = renderToString(
       <SplitText split={['words', 'chars']} cssVars aria="none">

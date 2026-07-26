@@ -405,6 +405,37 @@ describe('fonts', () => {
     document.fonts.delete(face);
   });
 
+  it('holds onSplit back until fonts are loaded when asked to', async (context) => {
+    const face = new FontFace(
+      'SplitTextHeld',
+      'local("Courier New"), local("Liberation Mono"), local("DejaVu Sans Mono")',
+    );
+    document.fonts.add(face);
+    const loading = face.load();
+    if (document.fonts.status !== 'loading') {
+      document.fonts.delete(face);
+      context.skip();
+    }
+
+    const onSplit = vi.fn();
+    const host = mount(
+      <SplitText style={{ fontFamily: 'SplitTextHeld, serif' }} waitForFonts onSplit={onSplit}>
+        {TEXT}
+      </SplitText>,
+      'width:330px',
+    );
+    const root = rootOf(host);
+    expect(root.dataset.splitState).toBe('pending');
+    expect(onSplit).not.toHaveBeenCalled();
+
+    await loading.catch(() => {});
+    await document.fonts.ready;
+    await frames();
+    expect(root.dataset.splitState).toBe('ready');
+    expect(onSplit).toHaveBeenCalledTimes(1);
+    expect(splitLines(root)).toEqual(naturalLines(root));
+    document.fonts.delete(face);
+  });
 });
 
 describe('onSplit', () => {

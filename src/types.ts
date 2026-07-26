@@ -100,6 +100,12 @@ export interface SplitTextOwnProps {
    * @default true
    */
   autoSplit?: boolean;
+  /**
+   * Hold back `onSplit` and `data-split-state="ready"` until the document's
+   * fonts have loaded, so entrance animations start from the final layout.
+   * @default false
+   */
+  waitForFonts?: boolean;
   lineClassName?: string;
   wordClassName?: string;
   charClassName?: string;

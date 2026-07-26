@@ -9,6 +9,7 @@ import {
   useMemo,
   useRef,
   useState,
+  useSyncExternalStore,
   type Attributes,
   type CSSProperties,
   type ElementType,
@@ -17,6 +18,7 @@ import {
   type ReactNode,
 } from 'react';
 import { Controller, register } from './engine';
+import { fontsLoaded, subscribeToFonts } from './fonts';
 import { tokenize, type Item, type Model, type Path, type WordItem, type WordPart } from './tokenize';
 import type {
   SplitElementProps,
@@ -71,6 +73,10 @@ const BLOCK: CSSProperties = { display: 'block' };
 const CONTENTS: CSSProperties = { display: 'contents' };
 const MASK: CSSProperties = { display: 'block', overflow: 'clip' };
 const HIDDEN = { 'aria-hidden': true } as const;
+
+const subscribeToNothing = (): (() => void) => () => {};
+const yes = (): boolean => true;
+const no = (): boolean => false;
 
 function includes(split: SplitTypes, unit: SplitUnit): boolean {
   return (split as string | readonly string[]).includes(unit);
@@ -253,6 +259,7 @@ function SplitTextInner(props: InnerProps, forwardedRef: ForwardedRef<HTMLElemen
     cssVars = false,
     aria = 'auto',
     autoSplit = true,
+    waitForFonts = false,
     lineClassName,
     wordClassName,
     charClassName,
@@ -278,7 +285,12 @@ function SplitTextInner(props: InnerProps, forwardedRef: ForwardedRef<HTMLElemen
       ? measurement.starts
       : null;
 
-  const ready = !wantLines || starts !== null;
+  const fontsReady = useSyncExternalStore(
+    waitForFonts ? subscribeToFonts : subscribeToNothing,
+    waitForFonts ? fontsLoaded : yes,
+    waitForFonts ? no : yes,
+  );
+  const ready = (!wantLines || starts !== null) && fontsReady;
 
   // Without lines there is no element that wraps the words, so each of them
   // is hidden on its own.
