@@ -39,6 +39,7 @@
   ],
   "scripts": {
     "build": "tsdown --config-loader native",
+    "dev": "vite playground",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:unit": "vitest run --project unit",
