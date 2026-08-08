@@ -2,6 +2,9 @@ export { SplitText } from './SplitText';
 export type {
   CharRenderInfo,
   LineRenderInfo,
+  SplitAnimation,
+  SplitCallback,
+  SplitEffect,
   SplitElementProps,
   SplitResult,
   SplitTextComponent,

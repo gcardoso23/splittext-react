@@ -28,6 +28,27 @@ export interface SplitResult {
 }
 
 /**
+ * An animation `onSplit` can hand back: a GSAP tween or timeline, or anything
+ * with the same methods. A split that replaces the elements reverts it, and
+ * the animation returned for the new elements starts where it had got to.
+ */
+export interface SplitAnimation {
+  totalTime(): number;
+  totalTime(value: number): unknown;
+  progress(): number;
+  progress(value: number): unknown;
+  revert(): unknown;
+}
+
+/**
+ * What `onSplit` returns: nothing, a function that undoes what it set up, or
+ * an animation to carry over to the next split.
+ */
+export type SplitEffect = void | (() => void) | SplitAnimation;
+
+export type SplitCallback = (result: SplitResult) => SplitEffect;
+
+/**
  * Props a custom `renderLine` / `renderWord` / `renderChar` element has to
  * receive. Spread them on the outermost DOM element you return: the
  * `data-split` attribute and the `display` style are how lines get measured.
@@ -119,9 +140,11 @@ export interface SplitTextOwnProps {
   /**
    * Called before paint every time the text has been split: on mount, and
    * again whenever the lines actually change. Return a function to clean up
-   * (revert an animation, for instance) before the next split or unmount.
+   * before the next split or unmount, or return the animation itself: it is
+   * reverted then, and the one returned for the new elements starts where
+   * it had got to.
    */
-  onSplit?: (result: SplitResult) => void | (() => void);
+  onSplit?: SplitCallback;
 }
 
 export type SplitTextProps<T extends ElementType = 'div'> = SplitTextOwnProps & {

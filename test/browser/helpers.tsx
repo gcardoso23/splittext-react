@@ -107,3 +107,32 @@ export function naturalWordLines(root: HTMLElement, text: string = clean(root.te
   twin.remove();
   return lines.map((words) => words.join(' '));
 }
+
+/** Shaped like a GSAP tween, as far as `onSplit` cares. */
+export class FakeAnimation {
+  time = 0;
+  reverted = false;
+
+  constructor(readonly duration = 1) {}
+
+  totalTime(): number;
+  totalTime(value: number): this;
+  totalTime(value?: number): number | this {
+    if (value === undefined) return this.time;
+    this.time = value;
+    return this;
+  }
+
+  progress(): number;
+  progress(value: number): this;
+  progress(value?: number): number | this {
+    if (value === undefined) return this.time / this.duration;
+    this.time = value * this.duration;
+    return this;
+  }
+
+  revert(): this {
+    this.reverted = true;
+    return this;
+  }
+}

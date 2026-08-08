@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { page } from 'vitest/browser';
 import { SplitText, type SplitResult } from '../../src';
 import {
+  FakeAnimation,
   frames,
   mount,
   naturalLines,
@@ -495,6 +496,43 @@ describe('onSplit', () => {
     rerender(host, render());
     expect(onSplit).toHaveBeenCalledTimes(1);
     expect(host.querySelector('[data-split="word"]')).toBe(word);
+  });
+
+  it('carries a returned animation over to the next split', async () => {
+    const animations: FakeAnimation[] = [];
+    const host = mount(
+      <SplitText
+        style={MONO}
+        onSplit={({ lines }) => {
+          // Longer with every line, as a stagger is.
+          const animation = new FakeAnimation(lines.length);
+          animations.push(animation);
+          return animation;
+        }}
+      >
+        {TEXT}
+      </SplitText>,
+      'width:500px',
+    );
+    expect(animations).toHaveLength(1);
+
+    animations[0]!.totalTime(0.5);
+    host.style.width = '250px';
+    await frames();
+    expect(animations).toHaveLength(2);
+    expect(animations[0]!.reverted).toBe(true);
+    expect(animations[1]!.totalTime()).toBe(0.5);
+
+    // Finished, the next one is finished too, though it has more lines to go.
+    animations[1]!.progress(1);
+    host.style.width = '180px';
+    await frames();
+    expect(animations).toHaveLength(3);
+    expect(animations[2]!.duration).toBeGreaterThan(animations[1]!.duration);
+    expect(animations[2]!.progress()).toBe(1);
+
+    unmountAll();
+    expect(animations[2]!.reverted).toBe(true);
   });
 
   it('works in strict mode', async () => {

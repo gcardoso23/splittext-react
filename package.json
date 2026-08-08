@@ -12,6 +12,7 @@
     "chars",
     "typography",
     "animation",
+    "gsap",
     "typescript"
   ],
   "license": "MIT",

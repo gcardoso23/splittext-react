@@ -18,6 +18,7 @@ import {
   type ReactNode,
 } from 'react';
 import { Controller, register } from './engine';
+import { resume, undo, type Carried } from './animation';
 import { fontsLoaded, subscribeToFonts } from './fonts';
 import { tokenize, type Item, type Model, type Path, type WordItem, type WordPart } from './tokenize';
 import type {
@@ -358,6 +359,9 @@ function SplitTextInner(props: InnerProps, forwardedRef: ForwardedRef<HTMLElemen
     onSplitRef.current = onSplit;
   });
 
+  // Where the last animation `onSplit` returned had got to, for the next one.
+  const carriedRef = useRef<Carried | null>(null);
+
   useIsomorphicLayoutEffect(() => {
     const root = rootRef.current;
     const callback = onSplitRef.current;
@@ -368,8 +372,12 @@ function SplitTextInner(props: InnerProps, forwardedRef: ForwardedRef<HTMLElemen
       words: query(root, 'word'),
       chars: wantChars ? query(root, 'char') : [],
     };
-    const cleanup = callback(result);
-    return typeof cleanup === 'function' ? cleanup : undefined;
+    const effect = callback(result);
+    resume(effect, carriedRef.current);
+    carriedRef.current = null;
+    return () => {
+      carriedRef.current = undo(effect);
+    };
   }, [ready, model.signature, starts, wantLines, wantChars, mask]);
 
   const lineCount = starts ? starts.length : 1;

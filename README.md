@@ -105,6 +105,27 @@ A line that is followed by another ends with an empty `<span data-split="eol">`.
 
 A resize that moves no word to another line does not call `onSplit` again.
 
+You can also return the animation itself. When the lines change while it plays, say the window is resized halfway through a reveal, it is reverted, and the animation returned for the new lines starts where it had got to. If it had finished, the new one starts finished, so the new lines are simply in place.
+
+```tsx
+<SplitText
+  as="h1"
+  mask
+  onSplit={({ lines }) =>
+    gsap.from(lines, {
+      yPercent: 100,
+      stagger: 0.08,
+      ease: 'power3.out',
+      scrollTrigger: { trigger: lines[0], start: 'top 85%' },
+    })
+  }
+>
+  Text that knows where its lines break
+</SplitText>
+```
+
+Any GSAP tween or timeline works, and so does anything else with `totalTime()`, `progress()` and `revert()`.
+
 If the text uses a web font, a split made before the font arrives may have to be redone when it does. `waitForFonts` holds `onSplit` and the `ready` state back until the document's fonts are loaded, so an entrance animation plays once, on the final layout.
 
 ### Rendering the elements yourself
@@ -144,7 +165,7 @@ import { motion } from 'motion/react';
 | `waitForFonts` | `boolean` | `false` | Hold back `onSplit` and `data-split-state="ready"` until fonts have loaded. |
 | `lineClassName`, `wordClassName`, `charClassName`, `maskClassName` | `string` | | Class names for the generated elements. |
 | `renderLine`, `renderWord`, `renderChar` | `(info) => ReactElement` | | Render an element yourself. `info` has `props`, `children` and `index`, plus `total` for lines, `text` for words, `char` and `wordIndex` for characters. |
-| `onSplit` | `(result) => void \| (() => void)` | | Called with `{ root, lines, words, chars }` after each split. |
+| `onSplit` | `(result) => void \| (() => void) \| animation` | | Called with `{ root, lines, words, chars }` after each split. Return a cleanup function, or an animation for the next split to take over. |
 
 Every other prop, and the `ref`, goes to the root element.
 
