@@ -1,4 +1,5 @@
 export { SplitText } from './SplitText';
+export { followSplit } from './follow';
 export type {
   CharRenderInfo,
   LineRenderInfo,

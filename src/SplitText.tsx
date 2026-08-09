@@ -19,6 +19,7 @@ import {
 } from 'react';
 import { Controller, register } from './engine';
 import { resume, undo, type Carried } from './animation';
+import { publish } from './follow';
 import { fontsLoaded, subscribeToFonts } from './fonts';
 import { tokenize, type Item, type Model, type Path, type WordItem, type WordPart } from './tokenize';
 import type {
@@ -364,18 +365,23 @@ function SplitTextInner(props: InnerProps, forwardedRef: ForwardedRef<HTMLElemen
 
   useIsomorphicLayoutEffect(() => {
     const root = rootRef.current;
+    if (!ready || !root) return;
+    let result: SplitResult | undefined;
+    // Looked up only if someone asks for them.
+    const read = (): SplitResult =>
+      (result ??= {
+        root,
+        lines: wantLines ? query(root, 'line') : [],
+        words: query(root, 'word'),
+        chars: wantChars ? query(root, 'char') : [],
+      });
     const callback = onSplitRef.current;
-    if (!ready || !root || !callback) return;
-    const result: SplitResult = {
-      root,
-      lines: wantLines ? query(root, 'line') : [],
-      words: query(root, 'word'),
-      chars: wantChars ? query(root, 'char') : [],
-    };
-    const effect = callback(result);
+    const effect = callback ? callback(read()) : undefined;
     resume(effect, carriedRef.current);
     carriedRef.current = null;
+    const retract = publish(root, read);
     return () => {
+      retract();
       carriedRef.current = undo(effect);
     };
   }, [ready, model.signature, starts, wantLines, wantChars, mask]);

@@ -1,7 +1,7 @@
 import { StrictMode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { page } from 'vitest/browser';
-import { SplitText, type SplitResult } from '../../src';
+import { followSplit, SplitText, type SplitResult } from '../../src';
 import {
   FakeAnimation,
   frames,
@@ -547,6 +547,68 @@ describe('onSplit', () => {
     host.style.width = '500px';
     await frames();
     expect(splitLines(root)).toEqual(naturalLines(root));
+  });
+});
+
+describe('followSplit', () => {
+  it('follows a split from outside React', async () => {
+    const host = mount(<SplitText style={MONO}>{TEXT}</SplitText>, 'width:500px');
+    const root = rootOf(host);
+    const calls: SplitResult[] = [];
+    const animations: FakeAnimation[] = [];
+    const stop = followSplit(root, (result) => {
+      calls.push(result);
+      const animation = new FakeAnimation();
+      animations.push(animation);
+      return animation;
+    });
+    // At once, with the lines on screen.
+    expect(calls).toHaveLength(1);
+    expect(calls[0]!.root).toBe(root);
+    expect(calls[0]!.lines).toHaveLength(splitLines(root).length);
+
+    animations[0]!.totalTime(0.25);
+    host.style.width = '250px';
+    await frames();
+    expect(calls).toHaveLength(2);
+    expect(calls[1]!.lines).toHaveLength(splitLines(root).length);
+    expect(calls[1]!.lines.every((line) => line.isConnected)).toBe(true);
+    expect(animations[0]!.reverted).toBe(true);
+    expect(animations[1]!.totalTime()).toBe(0.25);
+
+    stop();
+    expect(animations[1]!.reverted).toBe(true);
+    host.style.width = '400px';
+    await frames();
+    expect(calls).toHaveLength(2);
+  });
+
+  it('waits for the text to be split', async () => {
+    const host = mount(<SplitText style={MONO}>{TEXT}</SplitText>, 'width:300px;display:none');
+    const root = rootOf(host);
+    const onSplit = vi.fn();
+    followSplit(root, onSplit);
+    expect(onSplit).not.toHaveBeenCalled();
+
+    host.style.display = 'block';
+    await frames();
+    expect(onSplit).toHaveBeenCalledTimes(1);
+    expect(onSplit.mock.calls[0]![0].lines).toHaveLength(splitLines(root).length);
+  });
+
+  it('runs alongside onSplit, and cleans up when the text goes away', () => {
+    const own = vi.fn();
+    const cleanup = vi.fn();
+    const host = mount(
+      <SplitText style={MONO} onSplit={own}>
+        {TEXT}
+      </SplitText>,
+      'width:300px',
+    );
+    followSplit(rootOf(host), () => cleanup);
+    expect(own).toHaveBeenCalledTimes(1);
+    unmountAll();
+    expect(cleanup).toHaveBeenCalledTimes(1);
   });
 });
 

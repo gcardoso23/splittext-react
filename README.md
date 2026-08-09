@@ -128,6 +128,23 @@ Any GSAP tween or timeline works, and so does anything else with `totalTime()`, 
 
 If the text uses a web font, a split made before the font arrives may have to be redone when it does. `waitForFonts` holds `onSplit` and the `ready` state back until the document's fonts are loaded, so an entrance animation plays once, on the final layout.
 
+### Animating from outside React
+
+Some animations are set up away from the text: a page's entrance, built once for everything on the page, or reveals wired from a single hook by data attributes. `followSplit` lets that code follow a split it did not render.
+
+```tsx
+import { followSplit } from 'splittext-react';
+
+useEffect(() => {
+  const stops = Array.from(document.querySelectorAll('[data-reveal]'), (element) =>
+    followSplit(element, ({ lines }) => gsap.from(lines, { yPercent: 100, stagger: 0.08 })),
+  );
+  return () => stops.forEach((stop) => stop());
+}, []);
+```
+
+Give it the root element of a `SplitText`. The callback is called right away if the text is split already, or as soon as it is, and again each time the lines change. What it returns is handled as for `onSplit`: a cleanup function, or an animation the next split takes over. The function `followSplit` returns stops following and undoes the last thing the callback set up.
+
 ### Rendering the elements yourself
 
 Each level has a render prop. Spread `props` on the element you return: it carries the attribute and the `display` style that measuring relies on.
@@ -220,7 +237,7 @@ Hidden elements can't be reached by assistive technology, so if the text contain
 - **Don't give line elements horizontal padding, borders or margins.** Lines are measured as if they weren't there.
 - **`text-wrap: balance` works**, and lines stay balanced, but browsers balance a row of boxes slightly differently from plain text, so a word can sit on a different line than in the unsplit text.
 - **A component used inside the text has to render its `children`** for its content to be split. Otherwise it is treated as one box.
-- **Elements are re-created when a word moves to another line.** Set animations up in `onSplit` rather than once on mount.
+- **Elements are re-created when a word moves to another line.** Set animations up in `onSplit` or `followSplit` rather than once on mount.
 - **A root that shrinks to fit its lines** (a centered flex item, `width: fit-content`) is followed when the window is resized, but can't be told that it has more room when something else makes its container grow.
 - `SplitText` can not be nested inside `SplitText`.
 
