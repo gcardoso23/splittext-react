@@ -117,6 +117,28 @@ function isSplittable(children: unknown): boolean {
   return children != null && typeof children !== 'function' && typeof children !== 'boolean';
 }
 
+const LAZY = Symbol.for('react.lazy');
+
+/**
+ * A node that stands for another one until it is resolved. Elements a server
+ * component hands to a client component can arrive this way: the server sees
+ * the element, the client the reference to it.
+ */
+interface LazyNode {
+  readonly $$typeof: symbol;
+  readonly _payload: unknown;
+  readonly _init: (payload: unknown) => ReactNode;
+}
+
+function isLazy(node: unknown): node is LazyNode {
+  return (
+    typeof node === 'object' &&
+    node !== null &&
+    (node as { $$typeof?: unknown }).$$typeof === LAZY &&
+    typeof (node as { _init?: unknown })._init === 'function'
+  );
+}
+
 export function tokenize(children: ReactNode, splitChars: boolean): Model {
   const items: Item[] = [];
   const measured: number[] = [];
@@ -193,6 +215,12 @@ export function tokenize(children: ReactNode, splitChars: boolean): Model {
     }
     if (Array.isArray(node)) {
       for (const child of node) walk(child as ReactNode, path);
+      return;
+    }
+    if (isLazy(node)) {
+      // Resolved by now, or this throws and the render suspends until it
+      // is, as rendering the node would.
+      walk(node._init(node._payload), path);
       return;
     }
     if (isValidElement<{ children?: ReactNode; 'data-split-ignore'?: unknown }>(node)) {

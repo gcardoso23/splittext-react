@@ -216,7 +216,7 @@ Splitting into characters is what makes text expensive, in any library: every ch
 
 ## Server rendering
 
-It works as is. The package is marked `'use client'`, so it can be imported from a server component in the Next.js App Router.
+It works as is. The package is marked `'use client'`, so it can be imported from a server component in the Next.js App Router, and the text a server component gives it, nested elements included, is split the same on the server and on the client.
 
 The server renders words and characters, and one unmeasured line. Lines are measured on the client before the first paint after hydration; the height of the text does not change when they are added.
 

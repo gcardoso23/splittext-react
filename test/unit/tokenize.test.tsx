@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { describe, expect, it } from 'vitest';
 import { tokenize, type Item, type Model, type WordItem } from '../../src/tokenize';
 
@@ -123,6 +124,28 @@ describe('tokenize', () => {
   it('flattens fragments, arrays and numbers', () => {
     const model = tokenize(['Total: ', 42, <>{[' items', null, false]}</>], false);
     expect(words(model.items)).toEqual(['Total:', '42', 'items']);
+  });
+
+  it('looks inside the lazy nodes a server component hands to a client one', () => {
+    // Shaped like the references the React Server Components client makes.
+    const lazy = (node: ReactNode) => ({
+      $$typeof: Symbol.for('react.lazy'),
+      _payload: { status: 'fulfilled', value: node },
+      _init: (payload: { value: ReactNode }) => payload.value,
+    });
+    const element = (
+      <>
+        <span className="phrase">Hello world</span> <em>again</em>
+      </>
+    );
+    const model = tokenize(
+      [lazy(<span className="phrase">Hello world</span>), ' ', lazy(<em>again</em>)] as ReactNode,
+      false,
+    );
+    expect(words(model.items)).toEqual(['Hello', 'world', 'again']);
+    expect(model.label).toBe('Hello world again');
+    expect(model.signature).toBe(tokenize(element, false).signature);
+    expect(wordAt(model, 0).path[0]!.element.props).toMatchObject({ className: 'phrase' });
   });
 
   it('gives equal content an equal signature', () => {
