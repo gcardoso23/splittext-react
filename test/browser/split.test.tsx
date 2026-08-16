@@ -8,11 +8,11 @@ import {
   mount,
   naturalLines,
   naturalWordLines,
+  offscreen,
   rerender,
   splitLines,
   TEXT,
   unmountAll,
-  wait,
 } from './helpers';
 
 const MONO = { fontFamily: 'monospace', fontSize: 20, lineHeight: '28px' } as const;
@@ -345,17 +345,16 @@ describe('re-splitting', () => {
       'width:50vw',
     );
     const root = rootOf(host);
-    // Give the IntersectionObserver time to report that it is out of view.
-    await frames(4);
+    await offscreen(root);
     const before = splitLines(root);
 
     await page.viewport(520, 700);
     await frames(2);
     expect(splitLines(root)).toEqual(before);
 
-    await wait(250);
-    await frames();
-    expect(splitLines(root)).toEqual(naturalLines(root));
+    await expect
+      .poll(() => splitLines(root).join('|'), { timeout: 2000, interval: 50 })
+      .toBe(naturalLines(root).join('|'));
     expect(splitLines(root)).not.toEqual(before);
   });
 
@@ -683,8 +682,11 @@ describe('many instances', () => {
     for (const root of roots) expect(splitLines(root)).toEqual(naturalLines(root));
 
     await page.viewport(640, 700);
-    await wait(250);
-    await frames(6);
+    // The ones offscreen catch up a few per frame once resizing pauses, as
+    // many as the machine has time for.
+    const settled = () =>
+      roots.every((root) => splitLines(root).join('|') === naturalLines(root).join('|'));
+    await expect.poll(settled, { timeout: 3000, interval: 50 }).toBe(true);
     for (const root of roots) expect(splitLines(root)).toEqual(naturalLines(root));
   });
 });

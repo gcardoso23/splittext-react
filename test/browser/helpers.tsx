@@ -136,3 +136,22 @@ export class FakeAnimation {
     return this;
   }
 }
+
+/**
+ * Resolves once an IntersectionObserver with the library's margin has seen
+ * the element out of view. Observers report in the order they were made, so
+ * the library's own has seen it by then too.
+ */
+export function offscreen(element: Element): Promise<void> {
+  return new Promise((resolve) => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) return;
+        observer.disconnect();
+        resolve();
+      },
+      { rootMargin: '50% 0px' },
+    );
+    observer.observe(element);
+  });
+}
