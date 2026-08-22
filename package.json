@@ -17,6 +17,14 @@
   ],
   "license": "MIT",
   "author": "Gustavo Cardoso",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gcardoso23/splittext-react.git"
+  },
+  "homepage": "https://github.com/gcardoso23/splittext-react#readme",
+  "bugs": {
+    "url": "https://github.com/gcardoso23/splittext-react/issues"
+  },
   "type": "module",
   "sideEffects": false,
   "main": "./dist/index.cjs",
@@ -44,7 +52,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:unit": "vitest run --project unit",
-    "test:browser": "vitest run --project browser"
+    "test:browser": "vitest run --project browser",
+    "prepublishOnly": "pnpm typecheck && pnpm test && pnpm build"
   },
   "peerDependencies": {
     "react": ">=18",
