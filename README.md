@@ -180,6 +180,7 @@ import { motion } from 'motion/react';
 | `aria` | `'auto' \| 'hidden' \| 'none'` | `'auto'` | See [Accessibility](#accessibility). |
 | `autoSplit` | `boolean` | `true` | Re-split when the available width changes or fonts load. When `false`, lines are measured on mount and when the text changes, and that's all. |
 | `waitForFonts` | `boolean` | `false` | Hold back `onSplit` and `data-split-state="ready"` until fonts have loaded. |
+| `breakAfterHyphens` | `boolean` | `true` | Let a line break after a hyphen or dash inside a word, as the browser does with the text unsplit. `false` keeps a hyphenated word whole. |
 | `lineClassName`, `wordClassName`, `charClassName`, `maskClassName` | `string` | | Class names for the generated elements. |
 | `renderLine`, `renderWord`, `renderChar` | `(info) => ReactElement` | | Render an element yourself. `info` has `props`, `children` and `index`, plus `total` for lines, `text` for words, `char` and `wordIndex` for characters. |
 | `onSplit` | `(result) => void \| (() => void) \| animation` | | Called with `{ root, lines, words, chars }` after each split. Return a cleanup function, or an animation for the next split to take over. |
@@ -231,7 +232,7 @@ Hidden elements can't be reached by assistive technology, so if the text contain
 ## Limitations
 
 - **The root has to be a block.** `display: flex`, `grid` or `inline` on the root will not work; wrap it instead.
-- **Words don't break.** A word is an inline-block, so `hyphens` and `overflow-wrap` have no effect inside one. Breaks after hyphens and dashes are kept: `state-of-the-art` becomes four word elements with no space between them.
+- **Words don't break.** A word is an inline-block, so `hyphens` and `overflow-wrap` have no effect inside one. Breaks after hyphens and dashes are kept: `state-of-the-art` becomes four word elements with no space between them. With `breakAfterHyphens={false}` it stays one word, and moves to the next line whole.
 - **Characters lose kerning and ligatures**, and scripts with joined letters (Arabic, Devanagari) should not be split into characters.
 - **Not supported:** `text-indent`, `text-align: justify`, vertical writing modes.
 - **Don't give line elements horizontal padding, borders or margins.** Lines are measured as if they weren't there.

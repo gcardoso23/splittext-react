@@ -82,6 +82,21 @@ describe('line breaks', () => {
     expect(root.scrollWidth).toBeLessThanOrEqual(200);
   });
 
+  it('keep hyphenated words whole when asked to', () => {
+    const text = 'a state-of-the-art and e-commerce solution';
+    const host = mount(
+      <SplitText style={MONO} breakAfterHyphens={false}>
+        {text}
+      </SplitText>,
+      'width:200px',
+    );
+    const root = rootOf(host);
+    // Whole words: no line ends on a hyphen, and the breaks are those of a
+    // row of word boxes.
+    expect(splitLines(root).some((line) => line.endsWith('-'))).toBe(false);
+    expect(splitLines(root)).toEqual(naturalWordLines(root, text));
+  });
+
   it('are found when a word is in the middle of a transform', () => {
     const host = mount(
       <SplitText

@@ -139,7 +139,11 @@ function isLazy(node: unknown): node is LazyNode {
   );
 }
 
-export function tokenize(children: ReactNode, splitChars: boolean): Model {
+export function tokenize(
+  children: ReactNode,
+  splitChars: boolean,
+  breakAfterHyphens: boolean = true,
+): Model {
   const items: Item[] = [];
   const measured: number[] = [];
   const signature: string[] = [];
@@ -179,7 +183,7 @@ export function tokenize(children: ReactNode, splitChars: boolean): Model {
         label.push(' ');
         continue;
       }
-      if (!HAS_HYPHEN.test(chunk)) {
+      if (!breakAfterHyphens || !HAS_HYPHEN.test(chunk)) {
         addWordPart(chunk, path);
         continue;
       }

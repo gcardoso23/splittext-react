@@ -262,6 +262,7 @@ function SplitTextInner(props: InnerProps, forwardedRef: ForwardedRef<HTMLElemen
     aria = 'auto',
     autoSplit = true,
     waitForFonts = false,
+    breakAfterHyphens = true,
     lineClassName,
     wordClassName,
     charClassName,
@@ -278,7 +279,10 @@ function SplitTextInner(props: InnerProps, forwardedRef: ForwardedRef<HTMLElemen
   const wantChars = includes(split, 'chars');
   const hidden = aria === 'auto' ? true : undefined;
 
-  const model = useMemo(() => tokenize(children, wantChars), [children, wantChars]);
+  const model = useMemo(
+    () => tokenize(children, wantChars, breakAfterHyphens),
+    [children, wantChars, breakAfterHyphens],
+  );
 
   const [measurement, setMeasurement] = useState<Measurement | null>(null);
   // Line starts are only as good as the text they were measured for.

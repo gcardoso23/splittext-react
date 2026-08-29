@@ -50,6 +50,12 @@ describe('tokenize', () => {
     expect(words(tokenize('-foo 3-4 a- --', false).items)).toEqual(['-foo', '3-4', 'a-', '--']);
   });
 
+  it('keeps hyphenated words whole when asked to', () => {
+    const model = tokenize('a state-of-the-art e-commerce', false, false);
+    expect(words(model.items)).toEqual(['a', 'state-of-the-art', 'e-commerce']);
+    expect(model.signature).not.toBe(tokenize('a state-of-the-art e-commerce', false).signature);
+  });
+
   it('splits characters by grapheme', () => {
     const model = tokenize('a\u{1F469}\u200D\u{1F680}e\u0301 ok', true);
     expect(wordAt(model, 0).parts[0]!.chars).toEqual([

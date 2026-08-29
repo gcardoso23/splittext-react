@@ -127,6 +127,13 @@ export interface SplitTextOwnProps {
    * @default false
    */
   waitForFonts?: boolean;
+  /**
+   * Let a line break after a hyphen or dash inside a word, where the browser
+   * would break the same text unsplit. When `false`, a hyphenated word such
+   * as `state-of-the-art` is kept whole, on one line.
+   * @default true
+   */
+  breakAfterHyphens?: boolean;
   lineClassName?: string;
   wordClassName?: string;
   charClassName?: string;
