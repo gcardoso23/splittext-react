@@ -3,7 +3,7 @@
 Split text into lines, words and characters in React, for animation.
 
 ```tsx
-import { SplitText } from 'splittext-react';
+import { SplitText } from '@gcardoso23/splittext-react';
 
 <SplitText as="h1">Text that knows where its lines break</SplitText>;
 ```
@@ -20,7 +20,7 @@ Tested in Chromium, Firefox and WebKit.
 ## Install
 
 ```sh
-npm install splittext-react
+npm install @gcardoso23/splittext-react
 ```
 
 Requires `react` and `react-dom` 18 or later.
@@ -133,7 +133,7 @@ If the text uses a web font, a split made before the font arrives may have to be
 Some animations are set up away from the text: a page's entrance, built once for everything on the page, or reveals wired from a single hook by data attributes. `followSplit` lets that code follow a split it did not render.
 
 ```tsx
-import { followSplit } from 'splittext-react';
+import { followSplit } from '@gcardoso23/splittext-react';
 
 useEffect(() => {
   const stops = Array.from(document.querySelectorAll('[data-reveal]'), (element) =>
