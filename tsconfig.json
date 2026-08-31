@@ -18,7 +18,7 @@
     "noEmit": true,
     "types": [],
     "paths": {
-      "@gcardoso23/splittext-react": ["./src/index.ts"]
+      "react-split-lines": ["./src/index.ts"]
     }
   },
   "include": ["src", "test", "playground", "*.config.ts"]

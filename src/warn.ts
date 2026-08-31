@@ -7,5 +7,5 @@ export function warn(message: string): void {
   if (typeof process === 'undefined' || process.env.NODE_ENV === 'production') return;
   if (seen.has(message)) return;
   seen.add(message);
-  console.error(`[splittext-react] ${message}`);
+  console.error(`[react-split-lines] ${message}`);
 }

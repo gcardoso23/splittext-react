@@ -1,5 +1,5 @@
 {
-  "name": "@gcardoso23/splittext-react",
+  "name": "react-split-lines",
   "version": "0.1.0",
   "description": "Split text into lines, words and characters in React. Container-aware, font-aware, SSR-safe and batched for pages with lots of text.",
   "keywords": [

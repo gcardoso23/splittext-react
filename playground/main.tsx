@@ -1,6 +1,6 @@
 import { StrictMode, useRef, useState, type ReactElement, type ReactNode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { SplitText } from '@gcardoso23/splittext-react';
+import { SplitText } from 'react-split-lines';
 
 const PARAGRAPH =
   'Line breaks are never guessed. The browser lays the words out, the library reads where they landed, and every line gets an element of its own that follows the container as it changes.';

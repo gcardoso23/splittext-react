@@ -6,9 +6,7 @@ import { defineConfig, type UserConfig } from 'vite';
 const config: UserConfig = defineConfig({
   plugins: [react()],
   resolve: {
-    alias: {
-      '@gcardoso23/splittext-react': new URL('../src/index.ts', import.meta.url).pathname,
-    },
+    alias: { 'react-split-lines': new URL('../src/index.ts', import.meta.url).pathname },
   },
 });
 
